@@ -9,23 +9,26 @@ const phone_file_path = path.resolve(__dirname, 'phone_pos.txt')
 const selector = '#table1 > tbody > tr:nth-child(3) > td:nth-child(1) > div > p:nth-child(2) > font:nth-child(1) > b'
 let phone_current = 18800000073;
 let data: any;
-(async function() {
+(async function () {
     data = JSON.parse(fs.readFileSync(phone_file_path).toString())
     while ((data[`${phone_current}`] || data[`${phone_current}`] == '') && phone_current <= max) {
         phone_current += 100
     }
-    while(phone_current <= max){
-     await  play()
+    while (phone_current <= max) {
+        await play()
+        if ((phone_current - 73) % 1000000 == 0) {
+            saveFile()
+        }
     }
+    saveFile()
 })()
 async function play() {
     const url = `https://www.00cha.com/114.asp?t=${phone_current}`
-    const html: any = await getHtml(url,'gb2312')
-    const city = getElement(html,selector)?.text()
+    const html: any = await getHtml(url, 'gb2312')
+    const city = getElement(html, selector)?.text()
     if (typeof city === 'string') {
-        data[`${phone_current}`] = city.replace(/\s*/g,"")
-        saveFile()
-        console.log((phone_current - 18800000073)/100)
+        data[`${phone_current}`] = city.replace(/\s*/g, "")
+        console.log((phone_current - 18800000073) / 100)
         console.log(phone_current, city)
         phone_current += 100
     }
@@ -39,8 +42,9 @@ async function sleep(time: number) {
 }
 async function saveFile() {
     await pify(fs.writeFile)(phone_file_path, JSON.stringify(data, null, 4))
+    console.log('saveFile : ',phone_current)
 }
-function getElement(html: any,selector:string) {
+function getElement(html: any, selector: string) {
     try {
         const $ = cheerio.load(html, { decodeEntities: false })
         return $(selector)
@@ -48,13 +52,13 @@ function getElement(html: any,selector:string) {
         console.log(e)
     }
 }
-async function getHtml(url:string,encode='utf-8') {
+async function getHtml(url: string, encode = 'utf-8') {
     try {
         const res = await axios({
             url,
             responseType: 'stream',
-            headers:{
-                'User-agent':'Baiduspider'
+            headers: {
+                'User-agent': 'Baiduspider'
             },
             timeout: 10000
         })
